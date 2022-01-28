@@ -1,27 +1,48 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+import { createClient } from '@supabase/supabase-js';
 import react from 'react';
 import React from 'react';
 import appConfig from '../config.json';
+
+//banco de dados supaBase.io
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNjc1OCwiZXhwIjoxOTU4ODgyNzU4fQ.GzS2MJloBKZ_gxCcOqktgJAtG8Qvky6R6bBwOsjruig';
+const SUPABASE_URL = 'https://kjlyrpgvwnhyoryqpnpu.supabase.co';
+const supaBaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
     // Sua lógica vai aqui
     const [mensagem, setMensagem] = react.useState("");
     const [ListaDeMensagem, setListaDeMensagem] = React.useState([]);
 
+    React.useEffect(() => {
+        //{ data } para extrair o objeto data da classe 
+        supaBaseClient.from('mensagens')
+            .select('*')
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+                console.log("Dados do Bd: ", data);
+                setListaDeMensagem(data);
+            });
+        //atualiza quando lista de mensagens for alterado
+    }, []);
+
     function handerEnviaMensagem(novaMensagem) {
         //objeto mensagem
         const mensagem = {
-            //id vai ser o numero da mensagem
-            id: ListaDeMensagem.length + 1,
             //quem enviou
             de: 'LucasBara-dising',
             //mensagem em si
-            textoMens: novaMensagem,
-        }
-        //abre array do lista de mensagem e adiciona a mensagem
-        setListaDeMensagem([
-            mensagem, ...ListaDeMensagem,
-        ]);
+            mensagem: novaMensagem,
+        };
+        //inserindo mensagem
+        supaBaseClient.from('mensagens').insert([mensagem]).then(({ data }) => {
+            console.log("Criando mensagem", data);
+            //abre array do lista de mensagem e adiciona a mensagem
+            setListaDeMensagem([
+                data[0], ...ListaDeMensagem,
+            ]);
+        });
+
         setMensagem('');
     }
     // ./Sua lógica vai aqui
@@ -68,7 +89,7 @@ export default function ChatPage() {
                     {/* {ListaDeMensagem.map((mensagemAtual) => {
                         return (
                             <li key={mensagemAtual.id}>
-                                {mensagemAtual.de} : {mensagemAtual.textoMens}
+                                {mensagemAtual.de} : {mensagemAtual.texto}
                             </li>
                         )
                     })} */}
@@ -89,7 +110,6 @@ export default function ChatPage() {
                                 setMensagem(mens);
                             }}
                             onKeyPress={(event) => {
-                                console.log(event);
                                 //ação feita quando clica no enter
                                 if (event.key === 'Enter') {
                                     //tira a funcionalidade da tecla, usamos para tira a função pular linha do enter
@@ -164,12 +184,11 @@ function Header() {
 }
 
 function MessageList(props) {
-    console.log('MessageList', props);
     return (
         <Box
             tag="ul"
             styleSheet={{
-                overflow: 'scroll',
+
                 display: 'flex',
                 flexDirection: 'column-reverse',
                 flex: 1,
@@ -204,7 +223,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
@@ -220,7 +239,7 @@ function MessageList(props) {
                                 {(new Date().toLocaleDateString())}
                             </Text>
                         </Box>
-                        {mensagem.textoMens}
+                        {mensagem.mensagem}
                     </Text>
                 )
             })}
