@@ -78,8 +78,8 @@ export default function PaginaInicial() {
                             //muda de pagina atualizando tudo, forma tradicional 
                             //window.location.href = '/chat';
 
-                            //muda de pagina de forma fluida sem dar refresh
-                            roteamento.push('/chat');
+                            //muda de pagina de forma fluida sem dar refresh e envia o valor de username para outra tela
+                            roteamento.push(`/chat?username=${username}`);
                         }}
                         styleSheet={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',

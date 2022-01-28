@@ -2,7 +2,9 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import { createClient } from '@supabase/supabase-js';
 import react from 'react';
 import React from 'react';
+import { useRouter } from 'next/router';
 import appConfig from '../config.json';
+import { ButtonSendSticker } from '../src/components/ButtonSendStiker';
 
 //banco de dados supaBase.io
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNjc1OCwiZXhwIjoxOTU4ODgyNzU4fQ.GzS2MJloBKZ_gxCcOqktgJAtG8Qvky6R6bBwOsjruig';
@@ -10,9 +12,19 @@ const SUPABASE_URL = 'https://kjlyrpgvwnhyoryqpnpu.supabase.co';
 const supaBaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
+    const roteamento = useRouter();
+    const userLogado = roteamento.query.username;
     // Sua lógica vai aqui
     const [mensagem, setMensagem] = react.useState("");
     const [ListaDeMensagem, setListaDeMensagem] = React.useState([]);
+
+    function AtualizaMensagens(adicionaMensagem) {
+        return supaBaseClient.from('mensagens')
+            .on('INSERT', (resposta) => {
+                adicionaMensagem(resposta.new);
+            })
+            .subscribe();
+    }
 
     React.useEffect(() => {
         //{ data } para extrair o objeto data da classe 
@@ -20,17 +32,19 @@ export default function ChatPage() {
             .select('*')
             .order('id', { ascending: false })
             .then(({ data }) => {
-                console.log("Dados do Bd: ", data);
                 setListaDeMensagem(data);
             });
         //atualiza quando lista de mensagens for alterado
+        AtualizaMensagens(() => {
+
+        });
     }, []);
 
     function handerEnviaMensagem(novaMensagem) {
         //objeto mensagem
         const mensagem = {
             //quem enviou
-            de: 'LucasBara-dising',
+            de: userLogado,
             //mensagem em si
             mensagem: novaMensagem,
         };
@@ -66,7 +80,7 @@ export default function ChatPage() {
                     borderRadius: '5px',
                     backgroundColor: appConfig.theme.colors.neutrals[700],
                     height: '100%',
-                    maxWidth: '95%',
+                    maxWidth: '90%',
                     maxHeight: '95vh',
                     padding: '32px',
                 }}
@@ -77,7 +91,7 @@ export default function ChatPage() {
                         position: 'relative',
                         display: 'flex',
                         flex: 1,
-                        height: '80%',
+                        height: '70%',
                         backgroundColor: appConfig.theme.colors.neutrals[600],
                         flexDirection: 'column',
                         borderRadius: '5px',
@@ -102,6 +116,12 @@ export default function ChatPage() {
                             alignItems: 'center',
                         }}
                     >
+                        <ButtonSendSticker
+                            onStickerClick={(sticker) => {
+                                handerEnviaMensagem(':sticker:' + sticker);
+                            }}
+                        />
+
                         <TextField
                             value={mensagem}
                             //=> igual a function, uma versão enchuta
@@ -124,17 +144,19 @@ export default function ChatPage() {
                             type="textarea"
                             styleSheet={{
                                 width: '100%',
-                                height: '45px',
-                                fontSize: '17px',
+                                height: '55px',
+                                fontSize: '22px',
+                                marginLeft: '-60px',
                                 border: '0',
                                 resize: 'none',
                                 borderRadius: '5px',
-                                padding: '12px 8px',
+                                padding: '12px 8px 12px 80px',
                                 backgroundColor: appConfig.theme.colors.neutrals[800],
                                 marginRight: '12px',
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+
 
                         <Button
                             onClick={(event => {
@@ -144,7 +166,7 @@ export default function ChatPage() {
                             label='Enviar'
                             styleSheet={{
                                 width: '20%',
-                                height: '41px',
+                                height: '50px',
                                 border: '0',
                                 borderRadius: '5px',
                                 padding: '12px 8px',
@@ -188,7 +210,7 @@ function MessageList(props) {
         <Box
             tag="ul"
             styleSheet={{
-
+                overflow: 'scroll',
                 display: 'flex',
                 flexDirection: 'column-reverse',
                 flex: 1,
@@ -217,8 +239,8 @@ function MessageList(props) {
                         >
                             <Image
                                 styleSheet={{
-                                    width: '20px',
-                                    height: '20px',
+                                    width: '30px',
+                                    height: '30px',
                                     borderRadius: '50%',
                                     display: 'inline-block',
                                     marginRight: '8px',
@@ -239,7 +261,24 @@ function MessageList(props) {
                                 {(new Date().toLocaleDateString())}
                             </Text>
                         </Box>
-                        {mensagem.mensagem}
+                        {/* if para mostrar sticker */}
+                        {/* se a mensagem começar com :sticker: vai retornar true */}
+                        {mensagem.mensagem.startsWith(':sticker:')
+                            ? (
+                                <Image
+                                    styleSheet={{
+                                        width: '120px',
+                                        height: '120px',
+                                        marginRight: '8px',
+                                    }}
+                                    src={mensagem.mensagem.replace(':sticker:', '')} />
+                            )
+                            : (
+
+                                mensagem.mensagem
+
+                            )}
+
                     </Text>
                 )
             })}
